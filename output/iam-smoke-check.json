@@ -1,0 +1,20 @@
+{
+  "dataset": "Teklia/IAM-line",
+  "sample": "test row 0",
+  "scope": "one-sample setup check, not a benchmark",
+  "model_revision": "b4648cfa171985a6745f37ddd637e98c0da958ac",
+  "results": [
+    {
+      "variant": "raw",
+      "prediction": "assuredness . \" Bella Bella Marie \" ( Rarlophone ) , a lively song that changes tempo mid-way .",
+      "reference": "assuredness \" Bella Bella Marie \" ( Parlophone ) , a lively song that changes tempo mid-way .",
+      "cer": 0.03225806451612903
+    },
+    {
+      "variant": "contrast",
+      "prediction": "assuredness . \" Bella Bella Marie \" ( Rarlophone ) , a lively song that changes tempo mid-way .",
+      "reference": "assuredness \" Bella Bella Marie \" ( Parlophone ) , a lively song that changes tempo mid-way .",
+      "cer": 0.03225806451612903
+    }
+  ]
+}
