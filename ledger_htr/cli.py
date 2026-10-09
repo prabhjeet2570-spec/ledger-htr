@@ -5,6 +5,42 @@ from .data import read_jsonl, write_jsonl, sha256, resolve_crop
 from .metrics import score
 
 
+def download_model(args):
+    from huggingface_hub import snapshot_download
+    from .provenance import MODEL_ID, MODEL_REVISION, record_model
+    root = Path(args.root)
+    path = root / "models/trocr-small-handwritten"
+    snapshot_download(MODEL_ID, revision=MODEL_REVISION, token=False, local_dir=path,
+                      allow_patterns=["*.json", "*.txt", "*.model", "*.safetensors", "pytorch_model.bin"])
+    record_model(root, path)
+    print(f"Pinned model verified: {MODEL_ID}@{MODEL_REVISION}")
+
+
+def import_exports(args):
+    from .imports import import_transkribus
+    root = Path(args.root)
+    results = import_transkribus(root / args.directory, read_jsonl(root / args.references), args.model_name)
+    write_jsonl(root / args.output, results)
+    print(f"Imported {len(results)} identified crop transcriptions")
+
+
+def import_page(args):
+    from .page_export import read_page_export
+    root = Path(args.root)
+    sources = json.loads((root / "data/source-manifest.json").read_text())["pages"]
+    source = next(p for p in sources if p["id"] == args.page_id)
+    result = read_page_export(root / args.archive, source["sha256"], args.model_name)
+    if (result["width"], result["height"]) != (source["width"], source["height"]):
+        raise ValueError("Export dimensions do not match the identified source page")
+    result["page_id"] = source["id"]
+    result["source_identity_basis"] = "User-selected upload; dimensions checked; archive cannot verify input bytes"
+    output = root / args.output
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n")
+    output.with_suffix(".txt").write_text("\n\n".join("\n".join(l["text"] for l in r["lines"]) for r in result["regions"]) + "\n")
+    print(f"Imported {sum(len(r['lines']) for r in result['regions'])} full-page lines")
+
+
 def fetch(args):
     import urllib.request
     from PIL import Image
@@ -85,6 +121,8 @@ def infer(args):
     from transformers import TrOCRProcessor, VisionEncoderDecoderModel
     root = Path(args.root)
     model_path = root / args.model
+    from .provenance import verify_model
+    provenance = verify_model(root, model_path)
     processor = TrOCRProcessor.from_pretrained(model_path, local_files_only=True, use_fast=False)
     model = VisionEncoderDecoderModel.from_pretrained(model_path, local_files_only=True)
     device = "mps" if args.device == "auto" and torch.backends.mps.is_available() else ("cpu" if args.device == "auto" else args.device)
@@ -105,7 +143,7 @@ def infer(args):
             ids = model.generate(pixel_values, max_new_tokens=96, num_beams=1)
         text = processor.batch_decode(ids, skip_special_tokens=True)[0]
         predictions.append({"id": row["id"], "text": text, "variant": args.variant,
-                            "model": "microsoft/trocr-small-handwritten", "revision": args.revision,
+                            "model": provenance["repository"], "revision": provenance["revision"],
                             "device": device, "seconds": time.perf_counter() - start,
                             "image_sha256": row["image_sha256"]})
         print(f"{row['id']}: {text}", flush=True)
@@ -134,9 +172,12 @@ def main():
     parser = argparse.ArgumentParser(description="Historical ledger HTR study")
     parser.add_argument("--root", default=".")
     sub = parser.add_subparsers(dest="command", required=True)
+    p = sub.add_parser("download-model"); p.set_defaults(run=download_model)
+    p = sub.add_parser("import-transkribus"); p.add_argument("--directory", required=True); p.add_argument("--references", default="data/references.jsonl"); p.add_argument("--model-name", required=True); p.add_argument("--output", default="output/predictions/transkribus.jsonl"); p.set_defaults(run=import_exports)
+    p = sub.add_parser("import-page"); p.add_argument("--archive", required=True); p.add_argument("--page-id", required=True); p.add_argument("--model-name", required=True); p.add_argument("--output", default="output/transkribus/page-layout.json"); p.set_defaults(run=import_page)
     p = sub.add_parser("fetch"); p.add_argument("--manifest", default="data/source-manifest.json"); p.set_defaults(run=fetch)
     p = sub.add_parser("crop"); p.add_argument("--manifest", default="data/source-manifest.json"); p.add_argument("--plan", default="data/crop-plan.jsonl"); p.add_argument("--output", default="data/references.jsonl"); p.set_defaults(run=crop)
-    p = sub.add_parser("infer"); p.add_argument("--references", default="data/references.jsonl"); p.add_argument("--model", default="models/trocr-small-handwritten"); p.add_argument("--revision", default="b4648cfa171985a6745f37ddd637e98c0da958ac"); p.add_argument("--variant", choices=["raw", "grayscale", "contrast"], default="raw"); p.add_argument("--device", choices=["auto", "cpu", "mps"], default="auto"); p.add_argument("--output", required=True); p.set_defaults(run=infer)
+    p = sub.add_parser("infer"); p.add_argument("--references", default="data/references.jsonl"); p.add_argument("--model", default="models/trocr-small-handwritten"); p.add_argument("--variant", choices=["raw", "grayscale", "contrast"], default="raw"); p.add_argument("--device", choices=["auto", "cpu", "mps"], default="auto"); p.add_argument("--output", required=True); p.set_defaults(run=infer)
     p = sub.add_parser("evaluate"); p.add_argument("--references", default="data/references.jsonl"); p.add_argument("--predictions", required=True); p.add_argument("--split", choices=["pilot", "dev", "test"], default="test"); p.add_argument("--include-unreviewed", action="store_true"); p.add_argument("--output", required=True); p.set_defaults(run=evaluate)
     p = sub.add_parser("serve"); p.add_argument("--port", type=int, default=8765); p.set_defaults(run=lambda a: __import__("ledger_htr.review", fromlist=["serve"]).serve(Path(a.root), a.port))
     args = parser.parse_args()

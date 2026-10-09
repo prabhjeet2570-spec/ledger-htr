@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "ledger-htr"
 version = "0.1.0"
 description = "Reproducible recognition and error analysis for historical ledger images"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = ["Pillow>=11,<12"]
 
 [project.optional-dependencies]

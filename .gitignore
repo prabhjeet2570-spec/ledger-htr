@@ -8,3 +8,5 @@ data/crops/
 data/references.local.jsonl
 output/local/
 *.egg-info/
+
+output/external/
