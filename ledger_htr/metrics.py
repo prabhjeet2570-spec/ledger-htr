@@ -1,5 +1,6 @@
 """Declared text normalization and micro-averaged edit-distance metrics."""
 import unicodedata
+import re
 from .data import validate_references
 
 
@@ -59,9 +60,14 @@ def score(references, predictions, split="test", include_unreviewed=False):
                 "exact_match": sum(r["exact_match"] for r in group) / len(group),
                 "coverage": sum(not r["missing"] for r in group) / len(group)}
 
+    numeric = [r for r in details if r["kind"] == "amount" and re.fullmatch(r"[0-9]+ [0-9]{2}", r["reference"])]
+    digit_match = {"eligible_count": len(numeric),
+                   "matched_count": sum(re.sub(r"[^0-9]", "", r["reference"]) == re.sub(r"[^0-9]", "", r["prediction"]) for r in numeric),
+                   "interpretation": "Digit sequence only, not a parsed monetary value. Only two-part numeric references; ditto marks excluded."}
+    digit_match["rate"] = digit_match["matched_count"] / len(numeric) if numeric else None
     return {"scope": "exploratory-unreviewed" if any(not r["reviewed"] for r in details) else "reviewed-reference",
             "split": split, "normalization": "Unicode NFC; collapsed whitespace; case and punctuation retained",
             "excluded_reference_count": len(selected) - len(eligible), "overall": aggregate(details),
             "by_page": {p: aggregate([r for r in details if r["page_id"] == p]) for p in sorted({r["page_id"] for r in details})},
             "by_kind": {k: aggregate([r for r in details if r["kind"] == k]) for k in sorted({r["kind"] for r in details})},
-            "details": details}
+            "amount_digit_sequence": digit_match, "details": details}

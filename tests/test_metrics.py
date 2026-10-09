@@ -63,3 +63,11 @@ def test_unknown_and_duplicate_predictions_fail(predictions):
 def test_review_requires_attribution():
     with pytest.raises(ValueError, match="reviewer"):
         score([ref(reviewer=None)], [])
+
+
+def test_digit_component_metric_does_not_claim_full_amount_correctness():
+    result = score([ref(text="300 20"), ref("line-2", '750 "')],
+                   [{"id": "line-1", "text": "300.20"}, {"id": "line-2", "text": "75000"}])
+    assert result["by_kind"]["amount"]["exact_match"] == 0
+    assert result["amount_digit_sequence"]["eligible_count"] == 1
+    assert result["amount_digit_sequence"]["rate"] == 1

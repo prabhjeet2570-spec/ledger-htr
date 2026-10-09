@@ -19,6 +19,9 @@ ledger-htr = "ledger_htr.cli:main"
 [tool.setuptools.packages.find]
 include = ["ledger_htr*"]
 
+[tool.setuptools.package-data]
+ledger_htr = ["*.html"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
