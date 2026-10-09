@@ -1,0 +1,18 @@
+{
+  "status": "feasibility-only",
+  "pages": [
+    {
+      "id": "nypl-57733030",
+      "image": "data/pilot/57733030.jpg",
+      "sha256": "4956a09614bb54ce81291d35bb41e639794dbb472551b95a247662267463e759",
+      "width": 4666,
+      "height": 7091,
+      "source_url": "https://iiif-prod.nypl.org/index.php?id=57733030&t=g",
+      "context_url": "https://newyorkscapes.org/brownbrothers/index.html",
+      "nypl_item_uuid": "117d9410-dc97-0136-03f0-000d5d842228",
+      "attribution": "From The New York Public Library",
+      "reference_status": "not annotated",
+      "content_observation": "New Orleans February 1844; handwritten names, monetary columns, and ditto marks. Observation from image, not independently verified catalog dating."
+    }
+  ]
+}

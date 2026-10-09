@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.DS_Store
+models/
+data/pilot/*.jpg
+data/crops/
+data/references.local.jsonl
+output/local/
+*.egg-info/
