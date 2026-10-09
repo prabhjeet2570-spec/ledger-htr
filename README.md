@@ -4,7 +4,7 @@ An exploratory learning project started in October 2026 after reading the NYU Br
 
 Historical ledger images contain cursive names, monetary columns, abbreviations, and ditto marks. A plausible transcription can still alter a financial value. Ledger HTR helps a researcher inspect source images, review reference transcriptions, and measure those failures before using extracted data.
 
-The current study runs three preprocessing variants of Microsoft's TrOCR-small on 22 source-linked crops from a real Brown Brothers ledger page. It includes a local reference-review app, strict evaluation, pinned model provenance, and preserved outputs. This is an independent portfolio study; it is not affiliated with the NYU/NYPL project.
+The current study runs three preprocessing variants of Microsoft's TrOCR-small on 22 source-linked crops from a real Brown Brothers ledger page. It includes a local reference-review app, strict evaluation, pinned model provenance, and preserved outputs.
 
 ![Exploratory preprocessing results from the actual pilot](output/figures/preprocessing-pilot.png)
 
